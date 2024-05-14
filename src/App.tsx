@@ -1,41 +1,64 @@
 import * as React from "react";
 import "./App.css";
 
-const DEFAULT_POMODORO = 25 * 60 * 1000;
+type PomodoroSettings = {
+  label: string;
+  pomodoro: number;
+  shortRest: number;
+  longRest: number;
+};
+
+const defaultSettings: PomodoroSettings = {
+  label: "Default Pomo",
+  pomodoro: 25 * 60 * 1e3,
+  shortRest: 5 * 60 * 1e3,
+  longRest: 15 * 60 * 1e3,
+};
 
 function App() {
   const [isRunning, setIsRunning] = React.useState<boolean>(false);
-  const [timer, setTimer] = React.useState<number>(DEFAULT_POMODORO);
+  const [timer, setTimer] = React.useState<number>(defaultSettings.pomodoro);
   const intervalRef = React.useRef(0);
 
-  const formatTimer = (inSeconds: number) => {
+  React.useEffect(() => {
+    if (timer <= 0) {
+      clearInterval(intervalRef.current);
+      setIsRunning(false);
+    }
+  }, [timer]);
+
+  const formatTimer = (timer: number) => {
+    const inSeconds = timer / 1e3;
     const minutes = Math.floor(inSeconds / 60);
     const seconds = inSeconds % 60;
-    return `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+    return `${minutes < 10 ? "0" + minutes : minutes}:${
+      seconds < 10 ? "0" + seconds : seconds
+    }`;
   };
 
   const handleRunTimer = () => {
+    if (timer <= 0) return;
     if (isRunning) {
       clearInterval(intervalRef.current);
       setIsRunning(false);
-    } else {
-      const intervalId = setInterval(() => {
-        setTimer((lastVal) => lastVal - 1000);
-      }, 1000);
-      intervalRef.current = intervalId;
-      setIsRunning(true);
+      return;
     }
+    const intervalId = setInterval(() => {
+      setTimer((lastVal) => lastVal - 1e3);
+    }, 1e3);
+    intervalRef.current = intervalId;
+    setIsRunning(true);
   };
 
   const handleStopTimer = () => {
     clearInterval(intervalRef.current);
-    setTimer(DEFAULT_POMODORO);
+    setTimer(defaultSettings.pomodoro);
     setIsRunning(false);
   };
 
   return (
     <>
-      <h1>Pomodoro</h1>
+      <h1>Pomodotta</h1>
 
       <section
         style={{
@@ -47,23 +70,52 @@ function App() {
           padding: "1rem",
         }}
       >
-        <header>Rótulo</header>
+        <header>{defaultSettings.label}</header>
 
-        <div>{formatTimer(timer / 1000)}</div>
+        <div style={{ fontSize: "4rem", fontFamily: "monospace" }}>
+          {formatTimer(timer)}
+        </div>
 
         <footer
           style={{
             display: "flex",
             flexDirection: "row",
-            gap: "2rem",
           }}
         >
-          <button onClick={() => handleRunTimer()}>
+          <button
+            style={{
+              flex: 1,
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+              cursor: `${timer !== 0 ? "pointer" : "not-allowed"}`,
+            }}
+            onClick={() => handleRunTimer()}
+            disabled={timer <= 0}
+          >
             {isRunning ? "Pausar" : "Iniciar"}
           </button>
-          <button onClick={() => handleStopTimer()}>Interromper</button>
+
+          <button
+            style={{
+              flex: 1,
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              cursor: `${
+                timer !== defaultSettings.pomodoro ? "pointer" : "not-allowed"
+              }`,
+            }}
+            onClick={() => handleStopTimer()}
+            disabled={timer == defaultSettings.pomodoro}
+          >
+            Reiniciar
+          </button>
         </footer>
       </section>
+
+      <footer>
+        Feito por{" "}
+        <a href="https://github.com/guilhermemotta">Guilherme Motta</a>
+      </footer>
     </>
   );
 }

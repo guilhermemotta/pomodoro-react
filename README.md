@@ -7,9 +7,9 @@ O usuário deve poder criar sua própria configuração do timer e a mesma será
 
 Tempo:
 
-| Duração           | Padrão        |
-| ----------------- | ------------- |
-| Pomodoro          | 25 min        |
-| Descanso curto    | 5 min         |
-| Descanso longo    | 5 min         |
-| Duração da sessão | Indeterminado |
+| Duração        | Padrão                   |
+| -------------- | ------------------------ |
+| Pomodoro       | 25 min                   |
+| Descanso curto | 5 min                    |
+| Descanso longo | 5 min                    |
+| Sessão         | Total de tempo decorrido |
