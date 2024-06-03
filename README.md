@@ -11,5 +11,5 @@ Tempo:
 | -------------- | ------------------------ |
 | Pomodoro       | 25 min                   |
 | Descanso curto | 5 min                    |
-| Descanso longo | 5 min                    |
+| Descanso longo | 15 min                   |
 | Sessão         | Total de tempo decorrido |

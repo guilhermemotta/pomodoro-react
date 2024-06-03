@@ -1,7 +1,13 @@
 import * as React from "react";
-import "./App.css";
 
-type PomodoroSettings = {
+import { MdSettings } from "react-icons/md";
+
+import { formatTimer } from "./helpers/format-timer";
+import { useStickyState } from "./hooks/use-sticky-state";
+import "./App.css";
+import Settings from "./components/settings";
+
+export type PomodoroSettings = {
   label: string;
   pomodoro: number;
   shortRest: number;
@@ -16,9 +22,12 @@ const defaultSettings: PomodoroSettings = {
 };
 
 function App() {
+  const [currentSettings, setCurrentSettings] =
+    useStickyState<PomodoroSettings>(defaultSettings, "currentSettings");
   const [isRunning, setIsRunning] = React.useState<boolean>(false);
-  const [timer, setTimer] = React.useState<number>(defaultSettings.pomodoro);
+  const [timer, setTimer] = React.useState<number>(currentSettings.pomodoro);
   const intervalRef = React.useRef(0);
+  const settingsRef = React.useRef<HTMLDialogElement>(null);
 
   React.useEffect(() => {
     if (timer <= 0) {
@@ -26,15 +35,6 @@ function App() {
       setIsRunning(false);
     }
   }, [timer]);
-
-  const formatTimer = (timer: number) => {
-    const inSeconds = timer / 1e3;
-    const minutes = Math.floor(inSeconds / 60);
-    const seconds = inSeconds % 60;
-    return `${minutes < 10 ? "0" + minutes : minutes}:${
-      seconds < 10 ? "0" + seconds : seconds
-    }`;
-  };
 
   const handleRunTimer = () => {
     if (timer <= 0) return;
@@ -52,8 +52,20 @@ function App() {
 
   const handleStopTimer = () => {
     clearInterval(intervalRef.current);
-    setTimer(defaultSettings.pomodoro);
+    setTimer(currentSettings.pomodoro);
     setIsRunning(false);
+  };
+
+  const handleShowSettings = () => {
+    settingsRef.current?.showModal();
+  };
+
+  const handleCloseSettings = () => {
+    settingsRef.current?.close();
+  };
+
+  const handleChangeSettings = (setting: string, value: number) => {
+    setCurrentSettings({ ...currentSettings, [setting]: value });
   };
 
   return (
@@ -70,9 +82,45 @@ function App() {
           padding: "1rem",
         }}
       >
-        <header>{defaultSettings.label}</header>
+        <header
+          style={{
+            display: "inline-flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignContent: "middle",
+          }}
+        >
+          {currentSettings.label}
+          <Settings
+            ref={settingsRef}
+            currentSettings={currentSettings}
+            changeCallback={handleChangeSettings}
+            closeCallback={handleCloseSettings}
+          />
 
-        <div style={{ fontSize: "4rem", fontFamily: "monospace" }}>
+          <button
+            style={{
+              display: "inline-block",
+              backgroundColor: "transparent",
+              padding: "0.5rem",
+              margin: 0,
+              borderRadius: "100%",
+              width: "42px",
+              height: "42px",
+            }}
+            onClick={handleShowSettings}
+          >
+            <MdSettings style={{ width: "24px", height: "24px" }} />
+          </button>
+        </header>
+
+        <div
+          style={{
+            fontSize: "4rem",
+            fontFamily: "monospace",
+            cursor: "default",
+          }}
+        >
           {formatTimer(timer)}
         </div>
 
@@ -101,11 +149,11 @@ function App() {
               borderTopLeftRadius: 0,
               borderBottomLeftRadius: 0,
               cursor: `${
-                timer !== defaultSettings.pomodoro ? "pointer" : "not-allowed"
+                timer !== currentSettings.pomodoro ? "pointer" : "not-allowed"
               }`,
             }}
             onClick={() => handleStopTimer()}
-            disabled={timer == defaultSettings.pomodoro}
+            disabled={timer == currentSettings.pomodoro}
           >
             Reiniciar
           </button>
