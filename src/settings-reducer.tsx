@@ -8,6 +8,6 @@ export default function settingsReducer(
     case "changedPomodoro":
       return { ...settings, pomodoro: action.value };
     default:
-      throw Error("Unkdown action: " + action.type);
+      throw Error("Unknown action: " + action.type);
   }
 }

@@ -1,6 +1,10 @@
 import React from "react";
 
 import { PomodoroSettings } from "../App";
+import {
+  fromMilisecondsToMinutes,
+  fromMinutesToMiliseconds,
+} from "../helpers/conversions";
 
 interface SettingsProps {
   currentSettings: PomodoroSettings;
@@ -48,9 +52,12 @@ const Settings = React.forwardRef<HTMLDialogElement, SettingsProps>(
             Pomodoro:{" "}
             <input
               type="number"
-              value={currentSettings.pomodoro / 60 / 1e3}
+              min="0"
+              value={fromMilisecondsToMinutes(currentSettings.focus)}
               onChange={(event) => {
-                const inMiliseconds = parseInt(event.target.value) * 60 * 1e3;
+                const inMiliseconds = fromMinutesToMiliseconds(
+                  parseInt(event.target.value)
+                );
                 changeCallback("pomodoro", inMiliseconds);
               }}
             />
@@ -59,10 +66,12 @@ const Settings = React.forwardRef<HTMLDialogElement, SettingsProps>(
           <label>
             Short rest:{" "}
             <input
-              type="text"
-              value={currentSettings.shortRest / 60 / 1e3}
+              type="number"
+              value={fromMilisecondsToMinutes(currentSettings.shortRest)}
               onChange={(event) => {
-                const inMiliseconds = parseInt(event?.target.value) * 60 * 1e3;
+                const inMiliseconds = fromMinutesToMiliseconds(
+                  parseInt(event.target.value)
+                );
                 changeCallback("shorRest", inMiliseconds);
               }}
             />
@@ -71,10 +80,12 @@ const Settings = React.forwardRef<HTMLDialogElement, SettingsProps>(
           <label>
             Long rest:{" "}
             <input
-              type="text"
-              value={currentSettings.longRest / 60 / 1e3}
+              type="number"
+              value={fromMilisecondsToMinutes(currentSettings.longRest)}
               onChange={(event) => {
-                const inMiliseconds = parseInt(event.target.value) * 60 * 1e3;
+                const inMiliseconds = fromMinutesToMiliseconds(
+                  parseInt(event.target.value)
+                );
                 changeCallback("longRest", inMiliseconds);
               }}
             />

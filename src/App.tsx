@@ -2,37 +2,81 @@ import * as React from "react";
 
 import { MdSettings } from "react-icons/md";
 
-import { formatTimer } from "./helpers/format-timer";
-import { useStickyState } from "./hooks/use-sticky-state";
-import "./App.css";
 import Settings from "./components/settings";
+import Confirmation from "./components/confirmation";
+import { formatTimer } from "./helpers/format-timer";
+// import { useStickyState } from "./hooks/use-sticky-state";
+import "./App.css";
+import { sessionReducer } from "./sessionReducer";
 
 export type PomodoroSettings = {
   label: string;
-  pomodoro: number;
+  focus: number;
   shortRest: number;
   longRest: number;
 };
 
+// const defaultSettings: PomodoroSettings = {
+//   label: "Default Pomo",
+//   pomodoro: 25 * 60 * 1e3,
+//   shortRest: 5 * 60 * 1e3,
+//   longRest: 15 * 60 * 1e3,
+// };
+
 const defaultSettings: PomodoroSettings = {
   label: "Default Pomo",
-  pomodoro: 25 * 60 * 1e3,
-  shortRest: 5 * 60 * 1e3,
-  longRest: 15 * 60 * 1e3,
+  focus: 5 * 1e3,
+  shortRest: 2 * 1e3,
+  longRest: 4 * 1e3,
+};
+
+type Stage = "idle" | "focus" | "shortRest" | "longRest";
+
+export type Session = {
+  stage: Stage;
+  consecutiveShortRests: number;
+  totalTime: number;
+};
+
+const initialSession: Session = {
+  stage: "idle",
+  consecutiveShortRests: 0,
+  totalTime: 0,
 };
 
 function App() {
+  // const [currentSettings, setCurrentSettings] =
+  //   useStickyState<PomodoroSettings>(defaultSettings, "currentSettings");
   const [currentSettings, setCurrentSettings] =
-    useStickyState<PomodoroSettings>(defaultSettings, "currentSettings");
+    React.useState<PomodoroSettings>(defaultSettings);
   const [isRunning, setIsRunning] = React.useState<boolean>(false);
-  const [timer, setTimer] = React.useState<number>(currentSettings.pomodoro);
+  const [timer, setTimer] = React.useState<number>(currentSettings.focus);
+
+  const [currentSession, sessionDispatch] = React.useReducer(
+    sessionReducer,
+    initialSession
+  );
+
   const intervalRef = React.useRef(0);
   const settingsRef = React.useRef<HTMLDialogElement>(null);
+  const confirmationRef = React.useRef<HTMLDialogElement>(null);
+
+  React.useEffect(() => {
+    setTimer(currentSettings.focus);
+  }, [currentSettings]);
 
   React.useEffect(() => {
     if (timer <= 0) {
       clearInterval(intervalRef.current);
       setIsRunning(false);
+      sessionDispatch({ type: "focusEnded" });
+      const confirmationTimeout = setTimeout(() => {
+        if (!confirmationRef.current) {
+          throw new Error("confirmationRef not assigned");
+        }
+        confirmationRef.current.showModal();
+      }, 1e3);
+      return () => clearTimeout(confirmationTimeout);
     }
   }, [timer]);
 
@@ -41,31 +85,73 @@ function App() {
     if (isRunning) {
       clearInterval(intervalRef.current);
       setIsRunning(false);
+      sessionDispatch({ type: "focusEnded" });
       return;
     }
+
     const intervalId = setInterval(() => {
       setTimer((lastVal) => lastVal - 1e3);
+      sessionDispatch({ type: "totalTimeIncreased" });
     }, 1e3);
+    sessionDispatch({ type: "focusStarted" });
     intervalRef.current = intervalId;
     setIsRunning(true);
   };
 
   const handleStopTimer = () => {
     clearInterval(intervalRef.current);
-    setTimer(currentSettings.pomodoro);
+    setTimer(currentSettings.focus);
+    sessionDispatch({ type: "sessionStopped" });
+    alert(`currentSession.totalTime: ${currentSession.totalTime}`);
     setIsRunning(false);
   };
 
   const handleShowSettings = () => {
-    settingsRef.current?.showModal();
+    if (!settingsRef.current) {
+      throw Error("settingsRef is not assigned");
+    }
+    settingsRef.current.showModal();
   };
 
   const handleCloseSettings = () => {
-    settingsRef.current?.close();
+    if (!settingsRef.current) {
+      throw Error("settingsRef is not assigned");
+    }
+    settingsRef.current.close();
   };
 
   const handleChangeSettings = (setting: string, value: number) => {
     setCurrentSettings({ ...currentSettings, [setting]: value });
+  };
+
+  const handleConfirmDialog = () => {
+    console.log(`handleConfirmDialog fired`);
+    setTimer(
+      currentSession.consecutiveShortRests < 4
+        ? currentSettings.shortRest
+        : currentSettings.longRest
+    );
+
+    const intervalId = setInterval(() => {
+      setTimer((lastVal) => lastVal - 1e3);
+      sessionDispatch({ type: "totalTimeIncreased" });
+    }, 1e3);
+    setIsRunning(true);
+    intervalRef.current = intervalId;
+    sessionDispatch({ type: "nextStageApproved" });
+
+    if (!confirmationRef.current) {
+      throw new Error("confirmationRef not assigned");
+    }
+    confirmationRef.current.close();
+  };
+
+  const handleCancelDialog = () => {
+    console.log(`handleCancelDialog fired`);
+    if (!confirmationRef.current) {
+      throw new Error("confirmationRef not assigned");
+    }
+    confirmationRef.current.close();
   };
 
   return (
@@ -124,6 +210,14 @@ function App() {
           {formatTimer(timer)}
         </div>
 
+        <Confirmation
+          ref={confirmationRef}
+          title="Confirmação necessária"
+          text="Deseja prosseguir com a próxima etapa?"
+          confirmationCallback={handleConfirmDialog}
+          cancelationCallback={handleCancelDialog}
+        />
+
         <footer
           style={{
             display: "flex",
@@ -149,11 +243,11 @@ function App() {
               borderTopLeftRadius: 0,
               borderBottomLeftRadius: 0,
               cursor: `${
-                timer !== currentSettings.pomodoro ? "pointer" : "not-allowed"
+                timer !== currentSettings.focus ? "pointer" : "not-allowed"
               }`,
             }}
             onClick={() => handleStopTimer()}
-            disabled={timer == currentSettings.pomodoro}
+            disabled={!isRunning && timer === currentSettings.focus}
           >
             Reiniciar
           </button>
