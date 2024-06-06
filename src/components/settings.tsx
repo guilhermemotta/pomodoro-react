@@ -58,7 +58,7 @@ const Settings = React.forwardRef<HTMLDialogElement, SettingsProps>(
                 const inMiliseconds = fromMinutesToMiliseconds(
                   parseInt(event.target.value)
                 );
-                changeCallback("pomodoro", inMiliseconds);
+                changeCallback("focus", inMiliseconds);
               }}
             />
           </label>
@@ -72,7 +72,7 @@ const Settings = React.forwardRef<HTMLDialogElement, SettingsProps>(
                 const inMiliseconds = fromMinutesToMiliseconds(
                   parseInt(event.target.value)
                 );
-                changeCallback("shorRest", inMiliseconds);
+                changeCallback("shortRest", inMiliseconds);
               }}
             />
           </label>
