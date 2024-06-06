@@ -7,7 +7,7 @@ import Confirmation from "./components/confirmation";
 import { formatTimer } from "./helpers/format-timer";
 // import { useStickyState } from "./hooks/use-sticky-state";
 import "./App.css";
-import { sessionReducer } from "./sessionReducer";
+import { sessionReducer } from "./session-reducer";
 
 export type PomodoroSettings = {
   label: string;
